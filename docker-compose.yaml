@@ -1,0 +1,10 @@
+services:
+  db:
+    image: postgres:15-bullseye
+    restart: always
+    environment:
+      POSTGRES_DB: balancer
+      POSTGRES_USER: "root"
+      POSTGRES_PASSWORD: "secret"
+    ports:
+      - "8081:5432"
