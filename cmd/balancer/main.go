@@ -48,7 +48,7 @@ func main() {
 	addr := fmt.Sprintf("localhost:%s", conf.ServerPort)
 	server := &http.Server{Addr: addr, Handler: router(handler)}
 
-	log.Println("starting server at", addr)
+	log.Println("starting balancer at", addr)
 
 	configs, err := service.Balancer.GetConfig(serverCtx)
 	if err != nil {
