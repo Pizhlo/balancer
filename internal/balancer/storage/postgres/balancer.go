@@ -21,7 +21,7 @@ func (db *BalancerStore) Close() {
 	db.Pool.Close()
 }
 
-func (db *BalancerStore) GetAddress(ctx context.Context) ([]model.ConfigDB, error) {
+func (db *BalancerStore) GetConfig(ctx context.Context) ([]model.ConfigDB, error) {
 	q := `SELECT * FROM config`
 	configs := []model.ConfigDB{}
 
