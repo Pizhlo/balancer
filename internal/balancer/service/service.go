@@ -17,7 +17,7 @@ type Service struct {
 	Balancer      Balancer
 	Configs       []model.ConfigDB
 	Counter       int
-	mutex         sync.Mutex
+	mutex         sync.RWMutex
 	SleepDuration time.Duration
 }
 
@@ -37,6 +37,8 @@ func (s *Service) Handle() {
 }
 
 func (s *Service) GetCount() int {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
 	return s.Counter
 }
 
