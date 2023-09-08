@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"sync"
+	"time"
 
 	model "github.com/Pizhlo/balancer/model/balancer"
 )
@@ -22,14 +23,20 @@ func New(b Balancer) *Service {
 	return &Service{Balancer: b}
 }
 
-func (s *Service) Increment() {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+func (s *Service) Handle() {
+	s.increment()
+	time.Sleep(1 * time.Second)
+	s.decrement()
+}
 
+func (s *Service) increment() {
+	s.mutex.Lock()
 	s.Counter++
-	defer s.decrement()
+	s.mutex.Unlock()
 }
 
 func (s *Service) decrement() {
+	s.mutex.Lock()
 	s.Counter--
+	s.mutex.Unlock()
 }

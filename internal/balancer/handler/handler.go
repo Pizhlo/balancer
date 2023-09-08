@@ -21,5 +21,5 @@ func (h *Handler) GetRequest(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 
-	h.srv.Increment()
+	h.srv.Handle()
 }
