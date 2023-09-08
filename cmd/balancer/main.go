@@ -58,6 +58,13 @@ func main() {
 	service.Configs = configs
 	log.Printf("loaded configs: %+v\n", service.Configs)
 
+	ticker := startTicker(10 * time.Second)
+	done := make(chan bool)
+
+	go func() {
+		service.Print(ticker, done)
+	}()
+
 	go func() {
 		<-sig
 
@@ -98,4 +105,11 @@ func router(handler *handler.Handler) http.Handler {
 	})
 
 	return r
+}
+
+func startTicker(d time.Duration) *time.Ticker {
+	log.Println("starting ticker with duration", d)
+	t := time.NewTicker(d)
+
+	return t
 }

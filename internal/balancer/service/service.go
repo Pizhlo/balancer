@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"log"
 	"sync"
 	"time"
 
@@ -39,4 +40,19 @@ func (s *Service) decrement() {
 	s.mutex.Lock()
 	s.Counter--
 	s.mutex.Unlock()
+}
+
+func (s *Service) Print(ticker *time.Ticker, done chan bool) {
+	for {
+		select {
+		case <-done:
+			return
+		case <-ticker.C:
+			s.log()
+		}
+	}
+}
+
+func (s *Service) log() {
+	log.Println("current number of requests:", s.Counter)
 }

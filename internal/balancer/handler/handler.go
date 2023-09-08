@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/Pizhlo/balancer/internal/balancer/service"
@@ -17,7 +17,7 @@ func New(srv *service.Service) *Handler {
 
 func (h *Handler) GetRequest(w http.ResponseWriter, r *http.Request) {
 
-	fmt.Println("got request")
+	log.Println("got request: ", r.URL)
 
 	w.WriteHeader(http.StatusOK)
 
