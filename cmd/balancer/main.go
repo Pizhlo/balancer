@@ -99,5 +99,9 @@ func router(handler *handler.Handler) http.Handler {
 		handler.GetRequest(w, r)
 	})
 
+	r.Get("/counter", func(w http.ResponseWriter, r *http.Request) {
+		handler.GetCounter(w, r)
+	})
+
 	return r
 }

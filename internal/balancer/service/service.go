@@ -36,6 +36,10 @@ func (s *Service) Handle() {
 	s.decrement()
 }
 
+func (s *Service) GetCount() int {
+	return s.Counter
+}
+
 func (s *Service) increment() {
 	s.mutex.Lock()
 	s.Counter++
