@@ -14,19 +14,25 @@ type Balancer interface {
 }
 
 type Service struct {
-	Balancer Balancer
-	Configs  []model.ConfigDB
-	Counter  int
-	mutex    sync.Mutex
+	Balancer      Balancer
+	Configs       []model.ConfigDB
+	Counter       int
+	mutex         sync.Mutex
+	SleepDuration time.Duration
 }
 
-func New(b Balancer) *Service {
-	return &Service{Balancer: b}
+func New(b Balancer, tickerDuration time.Duration) *Service {
+	s := &Service{Balancer: b}
+
+	done := make(chan bool)
+	s.startTicker(tickerDuration, done)
+
+	return s
 }
 
 func (s *Service) Handle() {
 	s.increment()
-	time.Sleep(1 * time.Second)
+	time.Sleep(s.SleepDuration)
 	s.decrement()
 }
 
@@ -42,17 +48,20 @@ func (s *Service) decrement() {
 	s.mutex.Unlock()
 }
 
-func (s *Service) Print(ticker *time.Ticker, done chan bool) {
-	for {
-		select {
-		case <-done:
-			return
-		case <-ticker.C:
-			s.log()
-		}
-	}
-}
-
 func (s *Service) log() {
 	log.Println("current number of requests:", s.Counter)
+}
+
+func (s *Service) startTicker(d time.Duration, done chan bool) *time.Ticker {
+	tick := time.NewTicker(d)
+
+	for {
+		select {
+		case <-tick.C:
+			s.log()
+		case <-done:
+			break
+		default:
+		}
+	}
 }

@@ -41,7 +41,8 @@ func main() {
 	db := postgres.New(conn)
 	defer db.Close()
 
-	service := service.New(db)
+	service := service.New(db, conf.TickerDuration)
+	service.SleepDuration = conf.SleepDuration
 
 	handler := handler.New(service)
 
@@ -57,13 +58,6 @@ func main() {
 
 	service.Configs = configs
 	log.Printf("loaded configs: %+v\n", service.Configs)
-
-	ticker := startTicker(10 * time.Second)
-	done := make(chan bool)
-
-	go func() {
-		service.Print(ticker, done)
-	}()
 
 	go func() {
 		<-sig
@@ -87,14 +81,15 @@ func main() {
 		serverStopCtx()
 	}()
 
+	// Wait for server context to be stopped
+	<-serverCtx.Done()
+
 	// starting server
 	err = server.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
 		log.Fatal("error while starting server: ", err)
 	}
 
-	// Wait for server context to be stopped
-	<-serverCtx.Done()
 }
 
 func router(handler *handler.Handler) http.Handler {
@@ -105,11 +100,4 @@ func router(handler *handler.Handler) http.Handler {
 	})
 
 	return r
-}
-
-func startTicker(d time.Duration) *time.Ticker {
-	log.Println("starting ticker with duration", d)
-	t := time.NewTicker(d)
-
-	return t
 }

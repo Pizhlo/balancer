@@ -1,12 +1,16 @@
 package config
 
 import (
+	"time"
+
 	"github.com/spf13/viper"
 )
 
 type Config struct {
-	DBAddress  string `mapstructure:"DB_ADDRESS"`
-	ServerPort string `mapstructure:"SERVER_PORT"`
+	DBAddress      string        `mapstructure:"DB_ADDRESS"`
+	ServerPort     string        `mapstructure:"SERVER_PORT"`
+	SleepDuration  time.Duration `mapstructure:"HANDLE_SLEEP_TIME"`
+	TickerDuration time.Duration `mapstructure:"TICKER"`
 }
 
 func LoadConfig(path string) (Config, error) {
