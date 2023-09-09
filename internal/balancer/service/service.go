@@ -16,7 +16,7 @@ type Balancer interface {
 type Service struct {
 	Balancer      Balancer
 	Configs       []model.ConfigDB
-	Counter       int
+	counter       int
 	mutex         sync.RWMutex
 	SleepDuration time.Duration
 }
@@ -25,7 +25,7 @@ func New(b Balancer, tickerDuration time.Duration) *Service {
 	s := &Service{Balancer: b}
 
 	done := make(chan bool)
-	s.startTicker(tickerDuration, done)
+	go s.startTicker(tickerDuration, done)
 
 	return s
 }
@@ -39,23 +39,23 @@ func (s *Service) Handle() {
 func (s *Service) GetCount() int {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
-	return s.Counter
+	return s.counter
 }
 
 func (s *Service) increment() {
 	s.mutex.Lock()
-	s.Counter++
+	s.counter++
 	s.mutex.Unlock()
 }
 
 func (s *Service) decrement() {
 	s.mutex.Lock()
-	s.Counter--
+	s.counter--
 	s.mutex.Unlock()
 }
 
 func (s *Service) log() {
-	log.Println("current number of requests:", s.Counter)
+	log.Println("current number of requests:", s.counter)
 }
 
 func (s *Service) startTicker(d time.Duration, done chan bool) *time.Ticker {
