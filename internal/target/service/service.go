@@ -9,6 +9,7 @@ import (
 
 type Targeter interface {
 	GetAddress(ctx context.Context) (string, error)
+	UpdateStatus(ctx context.Context, status bool, address string) error
 }
 
 type Service struct {

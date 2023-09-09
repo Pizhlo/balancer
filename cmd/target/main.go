@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Pizhlo/balancer/config"
+	config "github.com/Pizhlo/balancer/config/target"
 	"github.com/Pizhlo/balancer/internal/target/handler"
 	"github.com/Pizhlo/balancer/internal/target/service"
 	"github.com/Pizhlo/balancer/internal/target/storage/postgres"
@@ -30,15 +30,24 @@ func main() {
 
 	log.Println("starting server at", address)
 
+	err = service.Targeter.UpdateStatus(context.TODO(), true, address)
+	if err != nil {
+		log.Fatal("err while updating status: ", err)
+	}
+
 	err = server.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
-		log.Fatal("error while starting server: ", err)
+		err = service.Targeter.UpdateStatus(context.TODO(), false, address)
+		if err != nil {
+			log.Fatal("err while updating status: ", err)
+		}
 	}
 
 	//wait for termination signal and register database & http server clean-up operations
 	wait := gracefulShutdown(context.TODO(), 2*time.Second, map[string]operation{
 
 		"http-server": func(ctx context.Context) error {
+			err = service.Targeter.UpdateStatus(context.TODO(), false, address)
 			return server.Shutdown(context.Background())
 		},
 		"db": func(ctx context.Context) error {

@@ -1,7 +1,6 @@
 package balancer
 
-type ConfigDB struct {
-	ID       int
+type Target struct {
 	Address  string
 	RRWeight int
 	IsActive bool

@@ -31,3 +31,14 @@ func (db *TargetStore) GetAddress(ctx context.Context) (string, error) {
 
 	return address, nil
 }
+
+func (db *TargetStore) UpdateStatus(ctx context.Context, status bool, address string) error {
+	q := `UPDATE config SET is_active = $1 WHERE address = $2`
+
+	_, err := db.Exec(ctx, q, status, address)
+	if err != nil {
+		return errors.Wrap(err, "err while updating status:")
+	}
+
+	return nil
+}
