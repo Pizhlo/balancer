@@ -5,17 +5,14 @@ import (
 	"log"
 	"sync"
 	"time"
-
-	model "github.com/Pizhlo/balancer/model/balancer"
 )
 
 type Targeter interface {
-	GetConfig(ctx context.Context) ([]model.ConfigDB, error)
+	GetAddress(ctx context.Context) (string, error)
 }
 
 type Service struct {
 	Targeter      Targeter
-	Configs       []model.ConfigDB
 	counter       int
 	mutex         sync.RWMutex
 	SleepDuration time.Duration

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -20,23 +19,17 @@ import (
 )
 
 func main() {
-	// initialize some resources
-	// e.g:
-	conf, handler, service, db := setup()
+	handler, service, db := setup()
 
-	log.Println("creating server")
-	addr := fmt.Sprintf("0.0.0.0:%s", conf.ServerPort)
-	server := &http.Server{Addr: addr, Handler: router(handler)}
-
-	configs, err := service.Targeter.GetConfig(context.TODO())
+	address, err := service.Targeter.GetAddress(context.TODO())
 	if err != nil {
 		log.Fatal("unable to load configs from db: ", err)
 	}
 
-	service.Configs = configs
-	log.Printf("loaded configs: %+v\n", service.Configs)
+	server := &http.Server{Addr: address, Handler: router(handler)}
 
-	log.Println("starting server")
+	log.Println("starting server at", address)
+
 	err = server.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
 		log.Fatal("error while starting server: ", err)
@@ -58,7 +51,7 @@ func main() {
 
 }
 
-func setup() (config.Config, *handler.Handler, *service.Service, *postgres.TargetStore) {
+func setup() (*handler.Handler, *service.Service, *postgres.TargetStore) {
 	// loading config
 	conf, err := config.LoadConfig("../..")
 	if err != nil {
@@ -79,7 +72,7 @@ func setup() (config.Config, *handler.Handler, *service.Service, *postgres.Targe
 
 	handler := handler.New(service)
 
-	return conf, handler, service, db
+	return handler, service, db
 }
 
 func router(handler *handler.Handler) http.Handler {
