@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/Pizhlo/balancer/internal/balancer/service"
+	"github.com/Pizhlo/balancer/internal/target/service"
 )
 
 type Handler struct {

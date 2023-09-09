@@ -9,20 +9,20 @@ import (
 	model "github.com/Pizhlo/balancer/model/balancer"
 )
 
-type Balancer interface {
+type Targeter interface {
 	GetConfig(ctx context.Context) ([]model.ConfigDB, error)
 }
 
 type Service struct {
-	Balancer      Balancer
+	Targeter      Targeter
 	Configs       []model.ConfigDB
 	counter       int
 	mutex         sync.RWMutex
 	SleepDuration time.Duration
 }
 
-func New(b Balancer, tickerDuration time.Duration) *Service {
-	s := &Service{Balancer: b}
+func New(t Targeter, tickerDuration time.Duration) *Service {
+	s := &Service{Targeter: t}
 
 	done := make(chan bool)
 	go s.startTicker(tickerDuration, done)

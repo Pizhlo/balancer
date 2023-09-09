@@ -8,20 +8,20 @@ import (
 	"github.com/pkg/errors"
 )
 
-type BalancerStore struct {
+type TargetStore struct {
 	*pgxpool.Pool
 }
 
-func New(conn *pgxpool.Pool) *BalancerStore {
-	db := &BalancerStore{conn}
+func New(conn *pgxpool.Pool) *TargetStore {
+	db := &TargetStore{conn}
 	return db
 }
 
-func (db *BalancerStore) Close() {
+func (db *TargetStore) Close() {
 	db.Pool.Close()
 }
 
-func (db *BalancerStore) GetConfig(ctx context.Context) ([]model.ConfigDB, error) {
+func (db *TargetStore) GetConfig(ctx context.Context) ([]model.ConfigDB, error) {
 	q := `SELECT * FROM config`
 	configs := []model.ConfigDB{}
 
