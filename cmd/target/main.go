@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 	"time"
 
@@ -19,48 +18,56 @@ import (
 )
 
 func main() {
-	handler, service, db := setup()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
-	address, err := service.Targeter.GetAddress(context.TODO())
+	handler, service, db := setup(ctx)
+
+	address, err := service.Targeter.GetAddress(ctx)
 	if err != nil {
 		log.Fatal("unable to load configs from db: ", err)
 	}
 
 	server := &http.Server{Addr: address, Handler: router(handler)}
 
-	log.Println("starting server at", address)
+	go func() {
+		<-ctx.Done()
+		log.Println("shutting down target")
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
 
-	err = service.Targeter.UpdateStatus(context.TODO(), true, address)
+		err = service.Targeter.UpdateStatus(shutdownCtx, false, address)
+		if err != nil {
+			log.Fatal("err while updating status: ", err)
+		}
+
+		log.Println("closing db")
+		db.Close()
+
+		if err := server.Shutdown(shutdownCtx); err != nil {
+			log.Fatal("err while shutting down target: ", err)
+		}
+	}()
+
+	err = service.Targeter.UpdateStatus(ctx, true, address)
 	if err != nil {
 		log.Fatal("err while updating status: ", err)
 	}
 
+	log.Println("starting target at", address)
+
 	err = server.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
-		err = service.Targeter.UpdateStatus(context.TODO(), false, address)
-		if err != nil {
-			log.Fatal("err while updating status: ", err)
+		dbErr := service.Targeter.UpdateStatus(ctx, false, address)
+		if dbErr != nil {
+			log.Fatal("err while updating status: ", dbErr)
 		}
+		log.Fatal("err while starting target: ", err)
 	}
-
-	//wait for termination signal and register database & http server clean-up operations
-	wait := gracefulShutdown(context.TODO(), 2*time.Second, map[string]operation{
-
-		"http-server": func(ctx context.Context) error {
-			err = service.Targeter.UpdateStatus(context.TODO(), false, address)
-			return server.Shutdown(context.Background())
-		},
-		"db": func(ctx context.Context) error {
-			db.Close()
-			return nil
-		},
-	})
-
-	<-wait
 
 }
 
-func setup() (*handler.Handler, *service.Service, *postgres.TargetStore) {
+func setup(ctx context.Context) (*handler.Handler, *service.Service, *postgres.TargetStore) {
 	// loading config
 	conf, err := config.LoadConfig("../..")
 	if err != nil {
@@ -68,7 +75,7 @@ func setup() (*handler.Handler, *service.Service, *postgres.TargetStore) {
 	}
 
 	// creating new connection to db
-	conn, err := pgxpool.New(context.TODO(), conf.DBAddress)
+	conn, err := pgxpool.New(ctx, conf.DBAddress)
 	if err != nil {
 		log.Fatal("unable to create connection: ", err)
 	}
@@ -96,55 +103,4 @@ func router(handler *handler.Handler) http.Handler {
 	})
 
 	return r
-}
-
-// operation is a clean up function on shutting down
-type operation func(ctx context.Context) error
-
-// gracefulShutdown waits for termination syscalls and doing clean up operations after received it
-func gracefulShutdown(ctx context.Context, timeout time.Duration, ops map[string]operation) <-chan struct{} {
-	wait := make(chan struct{})
-	go func() {
-		s := make(chan os.Signal, 1)
-
-		// add any other syscalls that you want to be notified with
-		signal.Notify(s, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-		<-s
-
-		log.Println("shutting down")
-
-		// set timeout for the ops to be done to prevent system hang
-		timeoutFunc := time.AfterFunc(timeout, func() {
-			log.Printf("timeout %d ms has been elapsed, force exit", timeout.Milliseconds())
-			os.Exit(0)
-		})
-
-		defer timeoutFunc.Stop()
-
-		var wg sync.WaitGroup
-
-		// Do the operations asynchronously to save time
-		for key, op := range ops {
-			wg.Add(1)
-			innerOp := op
-			innerKey := key
-			go func() {
-				defer wg.Done()
-
-				log.Printf("cleaning up: %s", innerKey)
-				if err := innerOp(ctx); err != nil {
-					log.Printf("%s: clean up failed: %s", innerKey, err.Error())
-					return
-				}
-
-				log.Printf("%s was shutdown gracefully", innerKey)
-			}()
-		}
-
-		wg.Wait()
-
-		close(wait)
-	}()
-
-	return wait
 }

@@ -7,6 +7,7 @@ import (
 type Config struct {
 	BalancerPort string `mapstructure:"BALANCER_PORT"`
 	DBAddress    string `mapstructure:"DB_ADDRESS"`
+	Strategy     string `mapstructure:"STRATEGY"`
 }
 
 func LoadConfig(path string) (Config, error) {

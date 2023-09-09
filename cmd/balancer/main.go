@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"os"
 	"os/signal"
 	"sync"
@@ -12,16 +14,19 @@ import (
 	"time"
 
 	config "github.com/Pizhlo/balancer/config/balancer"
-	"github.com/Pizhlo/balancer/internal/balancer/service"
+	balancer "github.com/Pizhlo/balancer/internal/balancer/service"
 	"github.com/Pizhlo/balancer/internal/balancer/storage/postgres"
 	"github.com/go-chi/chi"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func main() {
-	conf, service, db := setup()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
-	err := service.LoadTargets(context.TODO())
+	conf, service, db := setup(ctx)
+
+	err := service.LoadTargets(ctx)
 	if err != nil && err != http.ErrServerClosed {
 		log.Fatal("unable to load targets: ", err)
 	}
@@ -31,40 +36,85 @@ func main() {
 	addr := fmt.Sprintf("localhost:%s", conf.BalancerPort)
 	server := &http.Server{Addr: addr, Handler: router()}
 
+	serverPool, err := balancer.NewServerPool(conf.Strategy)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	loadBalancer := balancer.NewLoadBalancer(serverPool)
+
+	for _, target := range service.Targets {
+		endpoint, err := url.Parse(target.Address)
+		if err != nil {
+			log.Fatalf("err while parsing url %s: %v\n", target.Address, err)
+		}
+
+		//endpoint.Scheme = "http://localhost"
+		//endpoint.Host = "localhost"
+		rp := httputil.NewSingleHostReverseProxy(endpoint)
+		backendServer := balancer.NewBackend(endpoint, rp)
+
+		serverPool.AddBackend(backendServer)
+
+		rp.ErrorHandler = func(writer http.ResponseWriter, request *http.Request, e error) {
+			log.Println("error handling the request; host: ", endpoint.Host, "err: ", e)
+			backendServer.SetAlive(false)
+
+			if !balancer.AllowRetry(request) {
+
+				log.Println("Max retry attempts reached, terminating; address: ", request.RemoteAddr, "path: ", request.URL.Path)
+				http.Error(writer, "Service not available", http.StatusServiceUnavailable)
+				return
+			}
+
+			log.Println("Attempting retry; address: ", request.RemoteAddr, "URL: ", request.URL.Path, "retry: ", true)
+			loadBalancer.Serve(
+				writer,
+				request.WithContext(
+					context.WithValue(request.Context(), balancer.RETRY_ATTEMPTED, true),
+				),
+			)
+		}
+	}
+
+	go balancer.LauchHealthCheck(ctx, serverPool)
+
+	go func() {
+		<-ctx.Done()
+		log.Println("shutting down balancer")
+
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		log.Println("closing db")
+		db.Close()
+
+		if err := server.Shutdown(shutdownCtx); err != nil {
+			log.Fatal("err while shutting down balancer: ", err)
+		}
+	}()
+
 	log.Println("starting balancer at", addr)
 	err = server.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
 		log.Fatal("error while starting server: ", err)
 	}
-
-	wait := gracefulShutdown(context.TODO(), 2*time.Second, map[string]operation{
-
-		"http-server": func(ctx context.Context) error {
-			return server.Shutdown(context.Background())
-		},
-		"db": func(ctx context.Context) error {
-			db.Close()
-			return nil
-		},
-	})
-
-	<-wait
 }
 
-func setup() (config.Config, *service.Service, *postgres.BalancerStore) {
+func setup(ctx context.Context) (config.Config, *balancer.Service, *postgres.BalancerStore) {
 	conf, err := config.LoadConfig("../..")
 	if err != nil {
 		log.Fatal("unable to load config: ", err)
 	}
 
-	conn, err := pgxpool.New(context.TODO(), conf.DBAddress)
+	conn, err := pgxpool.New(ctx, conf.DBAddress)
 	if err != nil {
 		log.Fatal("unable to create connection: ", err)
 	}
 
 	db := postgres.New(conn)
 
-	service := service.New(db)
+	service := balancer.New(db)
 
 	return conf, service, db
 }

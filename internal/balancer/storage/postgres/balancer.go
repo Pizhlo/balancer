@@ -22,7 +22,7 @@ func (db *BalancerStore) Close() {
 }
 
 func (db *BalancerStore) GetTargets(ctx context.Context) ([]model.Target, error) {
-	q := `SELECT address, rr_weight, is_active FROM config`
+	q := `SELECT address, rr_weight, is_active FROM config WHERE is_active`
 
 	targets := []model.Target{}
 	rows, err := db.Query(ctx, q)
