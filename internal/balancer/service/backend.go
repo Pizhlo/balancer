@@ -50,7 +50,6 @@ func (b *backend) IsAlive() bool {
 
 func (b *backend) GetURL() *url.URL {
 	log.Printf("getting url %s\n\n", b.url)
-	//b.url.Scheme = "http://localhost"
 	return b.url
 }
 
@@ -85,6 +84,10 @@ func NewServerPool(strategy string) (ServerPool, error) {
 		return &roundRobinServerPool{
 			backends: make([]Backend, 0),
 			current:  0,
+		}, nil
+	case "least-connections":
+		return &lcServerPool{
+			backends: make([]Backend, 0),
 		}, nil
 	default:
 		return nil, fmt.Errorf("Invalid strategy")

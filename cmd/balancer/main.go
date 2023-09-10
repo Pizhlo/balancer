@@ -49,8 +49,6 @@ func main() {
 			log.Fatalf("err while parsing url %s: %v\n", target.Address, err)
 		}
 
-		//endpoint.Scheme = "http://localhost"
-		//endpoint.Host = "localhost"
 		rp := httputil.NewSingleHostReverseProxy(endpoint)
 		backendServer := balancer.NewBackend(endpoint, rp)
 
