@@ -8,6 +8,7 @@ import (
 	"time"
 )
 
+// LauchHealthCheck запускает тикер и горутину, проверяющую соединение с сервером
 func LauchHealthCheck(ctx context.Context, sp ServerPool) {
 	t := time.NewTicker(time.Second * 20)
 	log.Println("Starting health check...")
@@ -22,6 +23,7 @@ func LauchHealthCheck(ctx context.Context, sp ServerPool) {
 	}
 }
 
+// HealthCheck проверяет соединение с сервером и устаналивает статус
 func HealthCheck(ctx context.Context, s ServerPool) {
 	aliveChannel := make(chan bool, 1)
 
@@ -48,6 +50,7 @@ func HealthCheck(ctx context.Context, s ServerPool) {
 	}
 }
 
+// IsBackendAlive отправяет запрос на сервер и записывает в канал статус сервера
 func IsBackendAlive(ctx context.Context, aliveChannel chan bool, u *url.URL) {
 	log.Println("IsBackendAlive; url: ", u)
 	client := http.Client{}
@@ -56,8 +59,10 @@ func IsBackendAlive(ctx context.Context, aliveChannel chan bool, u *url.URL) {
 
 	if err != nil {
 		log.Println("unable to make http request. err: ", err)
+		aliveChannel <- false
 	}
 
+	aliveChannel <- true
 	log.Println("IsBackendAlive", u.String(), " successful")
 	defer resp.Body.Close()
 }

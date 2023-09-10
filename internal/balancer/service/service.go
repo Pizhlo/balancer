@@ -24,6 +24,7 @@ func New(b Balancer) *Service {
 	return s
 }
 
+// LoadTargets загружает из базы все доступные серверы
 func (s *Service) LoadTargets(ctx context.Context) error {
 	targets, err := s.Balancer.GetTargets(ctx)
 	if err != nil {

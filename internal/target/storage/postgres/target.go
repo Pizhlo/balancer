@@ -20,6 +20,7 @@ func (db *TargetStore) Close() {
 	db.Pool.Close()
 }
 
+// GetAddress возвращает доступный незанятый адрес
 func (db *TargetStore) GetAddress(ctx context.Context) (string, error) {
 	q := `SELECT address FROM config WHERE NOT is_active LIMIT 1`
 
@@ -32,6 +33,7 @@ func (db *TargetStore) GetAddress(ctx context.Context) (string, error) {
 	return address, nil
 }
 
+// UpdateStatus обновляет в базе статус адреса
 func (db *TargetStore) UpdateStatus(ctx context.Context, status bool, address string) error {
 	q := `UPDATE config SET is_active = $1 WHERE address = $2`
 

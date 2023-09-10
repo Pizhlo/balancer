@@ -21,6 +21,7 @@ func (db *BalancerStore) Close() {
 	db.Pool.Close()
 }
 
+// GetTargets загружает активные серверы из базы
 func (db *BalancerStore) GetTargets(ctx context.Context) ([]model.Target, error) {
 	q := `SELECT address, rr_weight, is_active FROM config WHERE is_active`
 

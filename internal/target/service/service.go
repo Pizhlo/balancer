@@ -18,32 +18,35 @@ type Service struct {
 	Targeter       Targeter
 	counter        int
 	mutex          sync.RWMutex
-	SleepDuration  time.Duration
-	TickerDuration time.Duration
+	sleepDuration  time.Duration
+	tickerDuration time.Duration
 	logger         *log.Logger
 }
 
-func New(t Targeter, tickerDuration time.Duration) *Service {
-	s := &Service{Targeter: t, TickerDuration: tickerDuration}
+func New(t Targeter, tickerDuration time.Duration, sleepDuration time.Duration) *Service {
+	s := &Service{Targeter: t, tickerDuration: tickerDuration, sleepDuration: sleepDuration}
 
 	return s
 }
 
+// CreateLogger создает логгер, который ведет запись в файл, а также запускает тикер
 func (s *Service) CreateLogger(address string, strategy string) {
 	l := logger.New(address, strategy)
 
 	s.logger = l
 
 	done := make(chan bool)
-	go s.startTicker(s.TickerDuration, done)
+	go s.startTicker(s.tickerDuration, done)
 }
 
+// Handle увеличивает количество текущих запросов, а затем уменьшает
 func (s *Service) Handle() {
 	s.increment()
-	time.Sleep(s.SleepDuration)
+	time.Sleep(s.sleepDuration)
 	s.decrement()
 }
 
+// GetCount возвращает количество текущих запросов
 func (s *Service) GetCount() int {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()

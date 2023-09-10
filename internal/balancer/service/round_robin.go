@@ -10,6 +10,7 @@ type roundRobinServerPool struct {
 	current  int
 }
 
+// Rotate увеличивает текущее значение и возвращает следующий сервер в строке
 func (s *roundRobinServerPool) Rotate() Backend {
 	s.mux.Lock()
 	s.current = (s.current + 1) % s.GetServerPoolSize()
@@ -17,6 +18,7 @@ func (s *roundRobinServerPool) Rotate() Backend {
 	return s.backends[s.current]
 }
 
+// GetNextValidPeer рассчитывает следующий доступный сервер
 func (s *roundRobinServerPool) GetNextValidPeer() Backend {
 	for i := 0; i < s.GetServerPoolSize(); i++ {
 		nextPeer := s.Rotate()
@@ -27,14 +29,17 @@ func (s *roundRobinServerPool) GetNextValidPeer() Backend {
 	return nil
 }
 
+// GetServerPoolSize возвращает список сохраненных серверов
 func (s *roundRobinServerPool) GetBackends() []Backend {
 	return s.backends
 }
 
+// AddBackend сохраняет сервер в список серверов
 func (s *roundRobinServerPool) AddBackend(b Backend) {
 	s.backends = append(s.backends, b)
 }
 
+// GetServerPoolSize возвращает количество сохраненных серверов
 func (s *roundRobinServerPool) GetServerPoolSize() int {
 	return len(s.backends)
 }

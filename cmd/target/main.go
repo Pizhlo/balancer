@@ -85,8 +85,7 @@ func setup(ctx context.Context) (string, *handler.Handler, *service.Service, *po
 	// creating db
 	db := postgres.New(conn)
 
-	service := service.New(db, conf.TickerDuration)
-	service.SleepDuration = conf.SleepDuration
+	service := service.New(db, conf.TickerDuration, conf.SleepDuration)
 
 	handler := handler.New(service)
 

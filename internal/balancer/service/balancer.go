@@ -16,6 +16,7 @@ const (
 	RETRY_ATTEMPTED int = 0
 )
 
+// AllowRetry возвращает true / false в зависимости от того, разрешено ли дальше повторить попытку
 func AllowRetry(r *http.Request) bool {
 	if _, ok := r.Context().Value(RETRY_ATTEMPTED).(bool); ok {
 		return false
@@ -30,6 +31,7 @@ type ServerPool interface {
 	GetServerPoolSize() int
 }
 
+// Serve запрашивает следующий доступный сервер и перенаправляет запрос на него
 func (lb *loadBalancer) Serve(w http.ResponseWriter, r *http.Request) {
 	peer := lb.serverPool.GetNextValidPeer()
 	if peer != nil {
