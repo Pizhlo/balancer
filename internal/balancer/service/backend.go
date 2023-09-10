@@ -98,6 +98,10 @@ func NewServerPool(strategy string) (ServerPool, error) {
 		return &lcServerPool{
 			backends: make([]Backend, 0),
 		}, nil
+	case "sticky-session":
+		return &stickySessionServerPool{
+			backends: make([]Backend, 0),
+		}, nil
 	default:
 		return nil, fmt.Errorf("Invalid strategy")
 	}

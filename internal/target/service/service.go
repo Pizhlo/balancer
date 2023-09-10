@@ -31,7 +31,10 @@ func New(t Targeter, tickerDuration time.Duration, sleepDuration time.Duration) 
 
 // CreateLogger создает логгер, который ведет запись в файл, а также запускает тикер
 func (s *Service) CreateLogger(address string, strategy string) {
-	l := logger.New(address, strategy)
+	l, err := logger.New(address, strategy)
+	if err != nil {
+		log.Fatal("unable to create logger: ", err)
+	}
 
 	s.logger = l
 

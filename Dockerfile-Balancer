@@ -1,0 +1,6 @@
+FROM golang:latest
+WORKDIR /app
+COPY . .
+RUN go build -o balancer cmd/balancer/main.go
+RUN chmod +x balancer
+

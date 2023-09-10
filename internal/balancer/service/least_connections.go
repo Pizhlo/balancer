@@ -32,6 +32,9 @@ func (s *lcServerPool) GetNextValidPeer() Backend {
 
 // AddBackend сохраняет сервер в список серверов
 func (s *lcServerPool) AddBackend(b Backend) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
 	s.backends = append(s.backends, b)
 }
 

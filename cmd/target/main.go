@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -21,13 +22,9 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	strategy, handler, service, db := setup(ctx)
+	strategy, port, handler, service, db := setup(ctx)
 
-	address, err := service.Targeter.GetAddress(ctx)
-	if err != nil {
-		log.Fatal("unable to load configs from db: ", err)
-	}
-
+	address := fmt.Sprintf(":%d", port)
 	service.CreateLogger(address, strategy)
 
 	server := &http.Server{Addr: address, Handler: router(handler)}
@@ -38,7 +35,7 @@ func main() {
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
-		err = service.Targeter.UpdateStatus(shutdownCtx, false, address)
+		err := service.Targeter.UpdateStatus(shutdownCtx, false, address)
 		if err != nil {
 			log.Fatal("err while updating status: ", err)
 		}
@@ -51,7 +48,7 @@ func main() {
 		}
 	}()
 
-	err = service.Targeter.UpdateStatus(ctx, true, address)
+	err := service.Targeter.UpdateStatus(ctx, true, address)
 	if err != nil {
 		log.Fatal("err while updating status: ", err)
 	}
@@ -69,7 +66,7 @@ func main() {
 
 }
 
-func setup(ctx context.Context) (string, *handler.Handler, *service.Service, *postgres.TargetStore) {
+func setup(ctx context.Context) (string, int, *handler.Handler, *service.Service, *postgres.TargetStore) {
 	// loading config
 	conf, err := config.LoadConfig("../..")
 	if err != nil {
@@ -89,7 +86,7 @@ func setup(ctx context.Context) (string, *handler.Handler, *service.Service, *po
 
 	handler := handler.New(service)
 
-	return conf.Strategy, handler, service, db
+	return conf.Strategy, conf.Port, handler, service, db
 }
 
 func router(handler *handler.Handler) http.Handler {

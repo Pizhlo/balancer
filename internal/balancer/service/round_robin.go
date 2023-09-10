@@ -36,6 +36,9 @@ func (s *roundRobinServerPool) GetBackends() []Backend {
 
 // AddBackend сохраняет сервер в список серверов
 func (s *roundRobinServerPool) AddBackend(b Backend) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
 	s.backends = append(s.backends, b)
 }
 
