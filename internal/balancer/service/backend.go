@@ -54,7 +54,7 @@ func (b *backend) GetURL() *url.URL {
 }
 
 func (b *backend) Serve(rw http.ResponseWriter, req *http.Request) {
-	log.Println("serving; url =", b.url, "connections = ", b.connections)
+	log.Println("backend serving; url =", b.url, "connections = ", b.connections)
 	defer func() {
 		b.mux.Lock()
 		b.connections--
@@ -64,7 +64,9 @@ func (b *backend) Serve(rw http.ResponseWriter, req *http.Request) {
 	b.mux.Lock()
 	b.connections++
 	b.mux.Unlock()
-	log.Println("serving; url =", b.url, "added connections = ", b.connections)
+
+	log.Println("serve: b.url = ", b.url)
+	log.Println("backend serving; url =", b.url, "added connections = ", b.connections)
 	b.reverseProxy.ServeHTTP(rw, req)
 }
 

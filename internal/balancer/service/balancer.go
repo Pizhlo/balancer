@@ -1,7 +1,6 @@
 package service
 
 import (
-	"log"
 	"net/http"
 )
 
@@ -32,7 +31,6 @@ type ServerPool interface {
 }
 
 func (lb *loadBalancer) Serve(w http.ResponseWriter, r *http.Request) {
-	log.Println("balancer: server")
 	peer := lb.serverPool.GetNextValidPeer()
 	if peer != nil {
 		peer.Serve(w, r)

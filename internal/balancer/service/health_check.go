@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"log"
-	"net"
+	"net/http"
 	"net/url"
 	"time"
 )
@@ -49,15 +49,15 @@ func HealthCheck(ctx context.Context, s ServerPool) {
 }
 
 func IsBackendAlive(ctx context.Context, aliveChannel chan bool, u *url.URL) {
-	log.Println("IsBackendAlive; host: ", u.Host, "url: ", u)
-	var d net.Dialer
-	address := u.String()
-	conn, err := d.DialContext(ctx, "tcp", address)
+	log.Println("IsBackendAlive; url: ", u)
+	client := http.Client{}
+
+	resp, err := client.Get(u.String())
+
 	if err != nil {
-		log.Println("Site unreachable", err)
-		aliveChannel <- false
-		return
+		log.Println("unable to make http request. err: ", err)
 	}
-	_ = conn.Close()
-	aliveChannel <- true
+
+	log.Println("IsBackendAlive", u.String(), " successful")
+	defer resp.Body.Close()
 }
