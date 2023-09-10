@@ -59,7 +59,7 @@ func main() {
 }
 
 func setup(ctx context.Context) (*balancer.Service, *postgres.BalancerStore, balancer.ServerPool, balancer.LoadBalancer, *http.Server) {
-	conf, err := config.LoadConfig("../..")
+	conf, err := config.LoadConfig()
 	if err != nil {
 		log.Fatal("unable to load config: ", err)
 	}

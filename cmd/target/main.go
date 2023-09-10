@@ -68,7 +68,7 @@ func main() {
 
 func setup(ctx context.Context) (string, int, *handler.Handler, *service.Service, *postgres.TargetStore) {
 	// loading config
-	conf, err := config.LoadConfig("../..")
+	conf, err := config.LoadConfig()
 	if err != nil {
 		log.Fatal("unable to load config: ", err)
 	}
