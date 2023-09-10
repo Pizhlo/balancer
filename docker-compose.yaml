@@ -1,0 +1,78 @@
+services:
+  db:
+    image: postgres:15-bullseye
+    restart: always
+    environment:
+      POSTGRES_DB: balancer
+      POSTGRES_USER: "root"
+      POSTGRES_PASSWORD: "secret"
+    ports:
+      - "8081:5432"
+  balancer:
+    build:
+      context: . 
+      dockerfile: Dockerfile-Balancer
+    ports:
+      - 8080:8080
+    environment:
+      - DB_ADDRESS=postgresql://root:secret@db:5432/balancer?sslmode=disable
+      - BALANCER_PORT=8080
+      - STRATEGY=round-robin
+    depends_on:
+      - db
+      - target1
+      - target2
+      - target3
+      - target4
+      - target5
+    command: ["/app/balancer"]
+  target1:
+    build:
+      context: . 
+      dockerfile: Dockerfile
+    environment:
+      - DB_ADDRESS=postgresql://root:secret@db:5432/balancer?sslmode=disable
+      - STRATEGY=round-robin
+    depends_on:
+      - db
+    command: ["/app/target"]
+  target2:
+    build:
+      context: . 
+      dockerfile: Dockerfile
+    environment:
+      - DB_ADDRESS=postgresql://root:secret@db:5432/balancer?sslmode=disable
+      - STRATEGY=round-robin
+    depends_on:
+      - db
+    command: ["/app/target"]
+  target3:
+    build:
+      context: . 
+      dockerfile: Dockerfile
+    environment:
+      - DB_ADDRESS=postgresql://root:secret@db:5432/balancer?sslmode=disable
+      - STRATEGY=round-robin
+    depends_on:
+      - db
+    command: ["/app/target"]
+  target4:
+    build:
+      context: . 
+      dockerfile: Dockerfile
+    environment:
+      - DB_ADDRESS=postgresql://root:secret@db:5432/balancer?sslmode=disable
+      - STRATEGY=round-robin
+    depends_on:
+      - db
+    command: ["/app/target"]
+  target5:
+    build:
+      context: . 
+      dockerfile: Dockerfile
+    environment:
+      - DB_ADDRESS=postgresql://root:secret@db:5432/balancer?sslmode=disable
+      - STRATEGY=round-robin
+    depends_on:
+      - db
+    command: ["/app/target"]
