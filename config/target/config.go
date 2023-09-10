@@ -10,6 +10,7 @@ type Config struct {
 	DBAddress      string        `mapstructure:"DB_ADDRESS"`
 	SleepDuration  time.Duration `mapstructure:"HANDLE_SLEEP_TIME"`
 	TickerDuration time.Duration `mapstructure:"TICKER"`
+	Strategy       string        `mapstructure:"STRATEGY"`
 }
 
 func LoadConfig(path string) (Config, error) {

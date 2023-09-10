@@ -1,0 +1,6 @@
+2023/09/10 17:31:14 service.go:67: current number of requests: 0
+2023/09/10 17:31:24 service.go:67: current number of requests: 200
+2023/09/10 17:31:34 service.go:67: current number of requests: 201
+2023/09/10 17:31:44 service.go:67: current number of requests: 200
+2023/09/10 17:31:54 service.go:67: current number of requests: 1
+2023/09/10 17:32:04 service.go:67: current number of requests: 0

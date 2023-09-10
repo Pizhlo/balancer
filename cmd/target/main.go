@@ -21,12 +21,14 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	handler, service, db := setup(ctx)
+	strategy, handler, service, db := setup(ctx)
 
 	address, err := service.Targeter.GetAddress(ctx)
 	if err != nil {
 		log.Fatal("unable to load configs from db: ", err)
 	}
+
+	service.CreateLogger(address, strategy)
 
 	server := &http.Server{Addr: address, Handler: router(handler)}
 
@@ -67,7 +69,7 @@ func main() {
 
 }
 
-func setup(ctx context.Context) (*handler.Handler, *service.Service, *postgres.TargetStore) {
+func setup(ctx context.Context) (string, *handler.Handler, *service.Service, *postgres.TargetStore) {
 	// loading config
 	conf, err := config.LoadConfig("../..")
 	if err != nil {
@@ -88,7 +90,7 @@ func setup(ctx context.Context) (*handler.Handler, *service.Service, *postgres.T
 
 	handler := handler.New(service)
 
-	return handler, service, db
+	return conf.Strategy, handler, service, db
 }
 
 func router(handler *handler.Handler) http.Handler {
