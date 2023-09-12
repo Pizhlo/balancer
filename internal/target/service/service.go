@@ -20,7 +20,7 @@ type Service struct {
 	mutex          sync.RWMutex
 	sleepDuration  time.Duration
 	tickerDuration time.Duration
-	logger         *log.Logger
+	Logger         *log.Logger
 }
 
 func New(t Targeter, tickerDuration time.Duration, sleepDuration time.Duration) *Service {
@@ -36,7 +36,7 @@ func (s *Service) CreateLogger(address string, strategy string) {
 		log.Fatal("unable to create logger: ", err)
 	}
 
-	s.logger = l
+	s.Logger = l
 
 	done := make(chan bool)
 	go s.startTicker(s.tickerDuration, done)
@@ -70,7 +70,7 @@ func (s *Service) decrement() {
 
 func (s *Service) log() {
 	log.Println("current number of requests:", s.counter)
-	s.logger.Println("current number of requests:", s.counter)
+	s.Logger.Println("current number of requests:", s.counter)
 }
 
 func (s *Service) startTicker(d time.Duration, done chan bool) *time.Ticker {
